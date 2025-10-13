@@ -14,6 +14,7 @@
 ## Install
 
 ``` python -m venv rag-app ```
+
 ``` source rag-app/bin/activate ```
 
 ```pip install flask flask-cors anthropic sentence-transformers faiss-cpu numpy pypdf```
