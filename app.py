@@ -251,7 +251,55 @@ example_docs = [
     """,
 ]
 
-rag = None  # Will be initialized in __main__
+# Custom exception for configuration errors
+class ConfigurationError(Exception):
+    """Raised when there's a configuration issue."""
+    pass
+
+def get_api_key() -> str:
+    """Get API key with proper validation."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    
+    if not api_key or api_key == "your-api-key-here":
+        raise ConfigurationError(
+            "ANTHROPIC_API_KEY environment variable is not set. "
+            "Please set it with: export ANTHROPIC_API_KEY='your-key-here'"
+        )
+    
+    return api_key
+
+# Initialize RAG system with proper error handling
+rag = None # Will be initialized if API key is valid
+try:
+    API_KEY = get_api_key()
+    rag = RAGSystem(anthropic_api_key=API_KEY)
+    
+    print("Initializing RAG system with example documents...")
+    rag.add_documents(example_docs)
+    print("RAG system ready!")
+except ConfigurationError as e:
+    print(f"\n{'='*60}")
+    print("CONFIGURATION ERROR")
+    print(f"{'='*60}")
+    print(f"\n{str(e)}\n")
+    print("To fix this:")
+    print("1. Get your API key from: https://console.anthropic.com/")
+    print("2. Set it as an environment variable:")
+    print("   export ANTHROPIC_API_KEY='your-api-key-here'")
+    print("3. Restart the server\n")
+    print(f"{'='*60}\n")
+
+# Helper function to check if RAG is configured
+def check_rag_configured():
+    """Check if RAG system is configured and return error if not."""
+    if rag is None:
+        return jsonify({
+            "success": False,
+            "error": "Service not configured",
+            "message": "ANTHROPIC_API_KEY environment variable is not set",
+            "instructions": "Please set ANTHROPIC_API_KEY and restart the server"
+        }), 503
+    return None
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -867,9 +915,31 @@ HTML_TEMPLATE = """
 def home():
     return render_template_string(HTML_TEMPLATE)
 
+# health check endpoint
+@app.route("/health")
+def health_check():
+    """Check if the service is properly configured."""
+    if rag is None:
+        return jsonify({
+            "status": "error",
+            "configured": False,
+            "message": "ANTHROPIC_API_KEY not configured",
+            "instructions": "Set ANTHROPIC_API_KEY environment variable and restart"
+        })
+    
+    return jsonify({
+        "status": "healthy",
+        "configured": True,
+        "documents_count": len(rag.chunks) if hasattr(rag, 'chunks') else 0
+    })
 
+# Update existing routes to check configuration
 @app.route("/add_documents", methods=["POST"])
 def add_documents():
+    error = check_rag_configured()
+    if error:
+        return error
+    
     try:
         data = request.json
         documents = data.get("documents", [])
@@ -879,18 +949,19 @@ def add_documents():
 
         rag.add_documents(documents)
 
-        return jsonify(
-            {
-                "success": True,
-                "message": f"Successfully added {len(documents)} document(s) with {len(rag.chunks)} semantic chunks total",
-            }
-        )
+        return jsonify({
+            "success": True,
+            "message": f"Successfully added {len(documents)} document(s) with {len(rag.chunks)} semantic chunks total",
+        })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-
 @app.route("/upload_pdfs", methods=["POST"])
 def upload_pdfs():
+    error = check_rag_configured()
+    if error:
+        return error
+    
     try:
         if "files" not in request.files:
             return jsonify({"success": False, "error": "No files uploaded"})
@@ -909,18 +980,19 @@ def upload_pdfs():
 
         rag.add_documents(documents)
 
-        return jsonify(
-            {
-                "success": True,
-                "message": f"Successfully processed {len(files)} PDF(s) with {len(rag.chunks)} semantic chunks total",
-            }
-        )
+        return jsonify({
+            "success": True,
+            "message": f"Successfully processed {len(files)} PDF(s) with {len(rag.chunks)} semantic chunks total",
+        })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-
 @app.route("/query", methods=["POST"])
 def query():
+    error = check_rag_configured()
+    if error:
+        return error
+    
     try:
         data = request.json
         question = data.get("question", "")
@@ -934,15 +1006,11 @@ def query():
     except Exception as e:
         return jsonify({"error": str(e)})
 
-
 if __name__ == "__main__":
-    # Initialize RAG system
-    API_KEY = os.environ.get("ANTHROPIC_API_KEY", "your-api-key-here")
-    rag = RAGSystem(anthropic_api_key=API_KEY)
-    
-    print("Initializing RAG system with example documents...")
-    rag.add_documents(example_docs)
-    print("RAG system ready!")
+    if rag is None:
+        print("\n⚠️  WARNING: Server started without valid API key!")
+        print("⚠️  All API endpoints will return errors until configured.")
+        print("⚠️  Visit http://localhost:5000/health to check status\n")
     
     print("\n" + "=" * 50)
     print("RAG System Web Interface")
