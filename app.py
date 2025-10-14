@@ -218,12 +218,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
     return text
 
-
-# Initialize RAG system
-API_KEY = os.environ.get("ANTHROPIC_API_KEY", "your-api-key-here")
-rag = RAGSystem(anthropic_api_key=API_KEY)
-
-# Load example documents on startup
+# example documents to load on startup
 example_docs = [
     """
     Artificial Intelligence (AI) is transforming healthcare in numerous ways. 
@@ -256,9 +251,7 @@ example_docs = [
     """,
 ]
 
-print("Initializing RAG system with example documents...")
-rag.add_documents(example_docs)
-print("RAG system ready!")
+rag = None  # Will be initialized in __main__
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -943,9 +936,17 @@ def query():
 
 
 if __name__ == "__main__":
+    # Initialize RAG system
+    API_KEY = os.environ.get("ANTHROPIC_API_KEY", "your-api-key-here")
+    rag = RAGSystem(anthropic_api_key=API_KEY)
+    
+    print("Initializing RAG system with example documents...")
+    rag.add_documents(example_docs)
+    print("RAG system ready!")
+    
     print("\n" + "=" * 50)
     print("RAG System Web Interface")
     print("=" * 50)
     print("\nStarting server at http://localhost:5000")
     print("Press CTRL+C to stop\n")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, use_reloader=True)
