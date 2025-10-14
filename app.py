@@ -649,7 +649,7 @@ HTML_TEMPLATE = """
         const processed = [];
         let inList = false;
         let listItems = [];
-        
+    
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             
@@ -663,7 +663,7 @@ HTML_TEMPLATE = """
                 processed.push('');
                 continue;
             }
-            
+        
             // Check if it's a numbered list item
             const numberedMatch = line.match(/^(\\d+)\\.\\s+(.+)$/);
             if (numberedMatch) {
@@ -704,13 +704,13 @@ HTML_TEMPLATE = """
                 processed.push(`<p>${line}</p>`);
             }
         }
-        
-        // Close any remaining open list
+
+        // Close any remaining list
         if (inList) {
             processed.push('<ol>' + listItems.join('') + '</ol>');
         }
-        
-        return processed.join('\\n');
+
+        return processed.join('');
     }
     
     function switchTab(tab) {
