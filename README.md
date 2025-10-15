@@ -36,3 +36,6 @@ You can optimize the startup time by skipping the example documents. Just commen
 ## Future enhancements
 
 I'm currently working on a production ready version of this app using [FastAPI](https://fastapi.tiangolo.com/) and [Qdrant](https://qdrant.tech/) as the vector database.
+
+### Update
+I just uploaded the Qdrant version of the app: [https://github.com/hstm/rag-app-qdrant](https://github.com/hstm/rag-app-qdrant)
