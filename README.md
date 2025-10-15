@@ -1,8 +1,8 @@
-# RAG System with Anthropic API (Claude), Flask Web Interface, Semantic Chunking, and PDF Upload
+# RAG System with Anthropic API (Claude), Flask Web Interface, Paragraph-based Chunking, and PDF Upload
 
 ## Features
 
-- ✅ Semantic chunking
+- ✅ Paragraph-based chunking
 - ✅ PDF upload support
 - ✅ Prompt caching (90% cost savings!)
 - ✅ Smart relevance filtering
